@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book a meeting</title>
+</head>
+<body>
+    <h1>Book a meeting</h1>
+    <form action="/meet" method="post">
+        Enter your email: <input type="email" name="email" id="email" placeholder="example@gmail.com" required><br>
+        first name: <input type="text" name="first_name" id=""><br>
+        last name: <input type="text" name="last_name" id=""><br>
+        SET a date and time for the meeting
+        <input type="datetime-local" name="date" id="date" required><br>
+        leave a message <br><textarea name="message" id="" ></textarea><br>
+        
+        <button type="submit">Book</button><br>
+        <a href="/clear">Clear Flask session credentials</a><br>
+        {{db.id}}
+    </form>
+</body>
+</html>
