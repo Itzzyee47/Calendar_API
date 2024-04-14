@@ -94,7 +94,7 @@ def test_api_request():
     email = str(flask.session["email"])
     
     Event = {
-            'summary': 'Google calendar api test before hosting',
+            'summary': 'Your meeting has been set',
             'location': 'Buea, Cameroon',
             'description': 'You has been invited to the testing of the google calendar api and oauth over a web server',
             'start': {
@@ -114,7 +114,7 @@ def test_api_request():
                 'useDefault': False,
                 'overrides': [
                 {'method': 'email', 'minutes': 4 * 60},
-                {'method': 'popup', 'minutes': 10},
+                {'method': 'popup', 'minutes': 30},
                 ],
             },
             }
