@@ -3,7 +3,7 @@ import flask
 import requests
 import firebase_admin
 from flask_cors import CORS
-from firebase_admin import credentials,db
+from firebase_admin import credentials,db,firestore
 from flask import render_template, redirect, request,session
 from datetime import datetime as dt
 from datetime import timedelta as td
@@ -26,9 +26,24 @@ app = flask.Flask(__name__)
 CORS(app)
 
 cred = credentials.Certificate("cred.json")
-# firebase_admin.initialize_app(cred,{"databaseURL":"https://meetingz-f9fd1-default-rtdb.europe-west1.firebasedatabase.app/"})
+firebase_admin.initialize_app(cred)
 
-# ref = db.reference("/booked")
+db = firestore.client()
+ref = db.collection('booked')
+
+def addToDb(subject):
+  try:
+    if not isInDb(subject):
+      ref.document(subject['email']).set(subject)
+      return 'Data sucessfully added to the database', 200
+  except Exception as e:
+    return 404, 'An error occured!!'+e
+  
+def isInDb(subject):
+    if ref.document(subject['email']).get().exists():
+      return True
+    else:
+      return False
 
 
 
@@ -52,6 +67,7 @@ def test():
 def test2():
   if flask.request.method == "POST":
     data = request.form.to_dict()
+    data["status"] = False
     #db = ref.get()
     context = {"db":data,"name":db}
     
@@ -62,6 +78,8 @@ def test2():
 @app.route('/meet',methods=["POST"])
 def meet():
   if flask.request.method == "POST":
+    data = request.form.to_dict()
+    data["status"] = False
     date = flask.request.form.get("date")
     email = flask.request.form.get("email")
     duration = td(days=0,  hours=2, minutes=0)
@@ -71,6 +89,7 @@ def meet():
     flask.session["date"] = date_obj
     flask.session["endDate"] = endDate
     flask.session["email"] = email
+    flask.session["data"] = data
     
   # return f'<h1>The start date: {date_obj}<br> The end date: {endDate}<h1>'
   return flask.redirect(flask.url_for('test_api_request'))
@@ -121,22 +140,21 @@ def test_api_request():
             },
             }
 
-    event = service.events().insert(calendarId='primary', body=Event).execute() 
-    
-    # files = drive.files().list().execute()
+    try: 
+      event = service.events().insert(calendarId='primary', body=Event).execute() 
 
-    # Save credentials back to session in case access token was refreshed.
-    # ACTION ITEM: In a production app, you likely want to save these
-    #              credentials in a persistent database instead.
-    flask.session['credentials'] = credentials_to_dict(credentials)
-    
-    context = {"link":event.get('htmlLink'),"date":start, "email":email}
-    print("meeting booked sucessfully")
-    revoke()
-    clear_credentials()
-    
-
-    return render_template('meet.html',**context)
+      flask.session['credentials'] = credentials_to_dict(credentials)
+      context = {"link":event.get('htmlLink'),"date":start, "email":email}
+      
+      data = flask.session["data"]
+      addToDb(data)
+      print("meeting booked sucessfully")
+      revoke()
+      clear_credentials()
+      
+      return render_template('meet.html',**context)
+    except Exception as e:
+      return 404, 'An error occured'+e
 
 
 @app.route('/authorize')
