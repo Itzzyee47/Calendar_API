@@ -51,12 +51,12 @@ def InDb(subject):
 app.secret_key = 'moinfoubwsem32kj'
 
 
-@app.route('/')
-def index():
+# @app.route('/')
+# def index():
   
-  #db = ref.get()
-  context = {"name":"DB_Trys"}
-  return flask.render_template("index.html",**context)
+#   #db = ref.get()
+#   context = {"name":"DB_Trys"}
+#   return flask.render_template("index.html",**context)
 
 # # test routes.......................
 # @app.route('/t',methods=["post","get"])
