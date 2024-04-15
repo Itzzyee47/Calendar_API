@@ -4,7 +4,7 @@ import requests
 import firebase_admin
 from flask_cors import CORS
 from firebase_admin import credentials,db,firestore
-from flask import render_template, redirect, request,session
+from flask import render_template, redirect, request,session,jsonify
 from datetime import datetime as dt
 from datetime import timedelta as td
 
@@ -35,8 +35,9 @@ def addToDb(subject):
   try:
       ref.document(str(subject["email"])).set(subject)
       print('Data sucessfully added to the database')
+      return 200
   except Exception as e:
-    return 404, 'An error occured!!'+str(e)
+    return 'An error occured!!'+str(e), 404
   
 def InDb(subject):
     if ref.document(str(subject['email'])).get().exists():
@@ -164,9 +165,9 @@ def test_api_request():
       
       delayed_function(60)
       
-      return eV,start
+      return jsonify(eV,start), 202
     except Exception as e:
-      return 404, 'An error occured'+str(e)
+      return 'An error occured'+str(e), 404
 
 @app.route('/getEvents',methods=["get"])
 def getE():
@@ -175,17 +176,28 @@ def getE():
   for doc in data:
     dataA.append(doc.to_dict())
             
-  return 200, dataA
+  return dataA, 200
 
-@app.route('/updateEvent/<string:id>',methods=["patch"])
+@app.route('/updateEvent/<string:id>',methods=["PATCH"])
 def updateE(id):
   update = {'status':True}
   try:
-    data = ref.document(id).update(update)
-    if data:
-      return 200, 'Sucessfully updated'
+      ref.document(id).update(update)
+
+      return f'Sucessfully updated', 200
   except Exception as e:
-    return 403, 'An error occured updating'
+    return f'An error occured : {e}', 500
+  
+@app.route('/deleteEvent/<string:id>', methods=["DELETE"])
+def delete_event(id):
+  try:
+      # Delete the document with the provided ID
+      ref.document(id).delete()
+      # If the deletion is successful, return a success message with a 200 status code
+      return 'Successfully deleted', 200
+  except Exception as e:
+      # If an error occurs during the deletion process, return an error message with a 500 status code
+      return f'An error occurred: {e}', 500
 
 
 @app.route('/authorize')
