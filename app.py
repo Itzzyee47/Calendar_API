@@ -2,6 +2,7 @@ import os,datetime
 import flask
 import requests
 import firebase_admin
+from flask_cors import CORS
 from firebase_admin import credentials,db
 from flask import render_template, redirect, request,session
 from datetime import datetime as dt
@@ -22,15 +23,15 @@ API_SERVICE_NAME = 'calendar'
 API_VERSION = 'v3'
 
 app = flask.Flask(__name__)
+CORS(app)
 
 cred = credentials.Certificate("cred.json")
-firebase_admin.initialize_app(cred,{"databaseURL":"https://meetingz-f9fd1-default-rtdb.europe-west1.firebasedatabase.app/"})
+# firebase_admin.initialize_app(cred,{"databaseURL":"https://meetingz-f9fd1-default-rtdb.europe-west1.firebasedatabase.app/"})
 
-ref = db.reference("/booked")
+# ref = db.reference("/booked")
 
 
-# Note: A secret key is included in the sample so that it works.
-# If you use this code in your application, replace this with a truly secret
+
 # key. See https://flask.palletsprojects.com/quickstart/#sessions.
 app.secret_key = 'moinfoubwsem32kj'
 
@@ -38,8 +39,8 @@ app.secret_key = 'moinfoubwsem32kj'
 @app.route('/')
 def index():
   
-  db = ref.get()
-  context = {"db":db,"name":"DB_Trys"}
+  #db = ref.get()
+  context = {"name":"DB_Trys"}
   return flask.render_template("index.html",**context)
 
 @app.route('/t',methods=["post","get"])
@@ -51,7 +52,8 @@ def test():
 def test2():
   if flask.request.method == "POST":
     data = request.form.to_dict()
-    context = {"db":data,"name":"DB_Trys"}
+    #db = ref.get()
+    context = {"db":data,"name":db}
     
     return flask.render_template("test2.html",**context)
   
@@ -74,7 +76,7 @@ def meet():
   return flask.redirect(flask.url_for('test_api_request'))
 
 
-@app.route('/test')
+@app.route('/booked')
 def test_api_request():
     if 'credentials' not in flask.session:
         return flask.redirect('authorize')
@@ -94,9 +96,9 @@ def test_api_request():
     email = str(flask.session["email"])
     
     Event = {
-            'summary': 'Your meeting has been set',
+            'summary': 'Meeting with Competent Property Group Ltd',
             'location': 'Buea, Cameroon',
-            'description': 'You has been invited to the testing of the google calendar api and oauth over a web server',
+            'description': 'You has been invited to a meeting with real estate experts of Competent Property Group Ltd.',
             'start': {
                 'dateTime': start, 
                 'timeZone': 'Europe/London',
@@ -106,8 +108,8 @@ def test_api_request():
                 'timeZone': 'Europe/London',
             },
             'attendees': [
-                {'email': email },
-                {'email': "jeffyouashi@gmail.com"}
+                {'email': "jeffyouashi@gmail.com"},
+                {'email': email }
                 
             ],
             'reminders': {
