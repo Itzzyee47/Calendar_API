@@ -1,4 +1,4 @@
-import os,datetime
+import os,datetime,time
 import flask
 import requests
 import firebase_admin
@@ -33,14 +33,13 @@ ref = db.collection('booked')
 
 def addToDb(subject):
   try:
-    if not isInDb(subject):
-      ref.document(subject['email']).set(subject)
-      return 'Data sucessfully added to the database', 200
+      ref.document(str(subject["email"])).set(subject)
+      print('Data sucessfully added to the database')
   except Exception as e:
-    return 404, 'An error occured!!'+e
+    return 404, 'An error occured!!'+str(e)
   
-def isInDb(subject):
-    if ref.document(subject['email']).get().exists():
+def InDb(subject):
+    if ref.document(str(subject['email'])).get().exists():
       return True
     else:
       return False
@@ -58,17 +57,24 @@ def index():
   context = {"name":"DB_Trys"}
   return flask.render_template("index.html",**context)
 
+# test routes.......................
 @app.route('/t',methods=["post","get"])
 def test():
-  
-  return flask.render_template("test.html")
+  data = ref.order_by('email', direction=firestore.Query.ASCENDING).get()
+  dataA = []
+  for doc in data:
+            dataA.append(doc.to_dict())
+  context = {"data":dataA,"name":"Zyee's"}
+  return flask.render_template("test.html",**context)
 
+# test routes.......................
 @app.route('/t2',methods=["post"])
 def test2():
   if flask.request.method == "POST":
     data = request.form.to_dict()
     data["status"] = False
     #db = ref.get()
+    addToDb(data)
     context = {"db":data,"name":db}
     
     return flask.render_template("test2.html",**context)
@@ -78,6 +84,7 @@ def test2():
 @app.route('/meet',methods=["POST"])
 def meet():
   if flask.request.method == "POST":
+    # Compute and store values in session..
     data = request.form.to_dict()
     data["status"] = False
     date = flask.request.form.get("date")
@@ -107,7 +114,7 @@ def test_api_request():
     # service = build("calendar", "v3", credentials=creds)
     service = googleapiclient.discovery.build(
         API_SERVICE_NAME, API_VERSION, credentials=credentials)
-    
+    # Convert the necessary event values to strings...
     start = flask.session["date"]
     end = flask.session["endDate"]
     start = start.strftime('%Y-%m-%dT%H:%M:%S')
@@ -120,13 +127,17 @@ def test_api_request():
             'description': 'You has been invited to a meeting with real estate experts of Competent Property Group Ltd.',
             'start': {
                 'dateTime': start, 
-                'timeZone': 'Europe/London',
+                'timeZone': 'Africa/Douala',
             },
             'end': {
                 'dateTime': end,
-                'timeZone': 'Europe/London',
+                'timeZone': 'Africa/Douala',
             },
+            'organizer': [
+                {'email': 'ebongloveis@gmail.com'},
+            ],
             'attendees': [
+                {'email':'joeltabe3@gmail.com'},
                 {'email': "jeffyouashi@gmail.com"},
                 {'email': email }
                 
@@ -149,12 +160,12 @@ def test_api_request():
       data = flask.session["data"]
       addToDb(data)
       print("meeting booked sucessfully")
-      revoke()
-      clear_credentials()
+      
+      delayed_function(60)
       
       return render_template('meet.html',**context)
     except Exception as e:
-      return 404, 'An error occured'+e
+      return 404, 'An error occured'+str(e)
 
 
 @app.route('/authorize')
@@ -216,7 +227,7 @@ def revoke():
       headers = {'content-type': 'application/x-www-form-urlencoded'})
   if revoke:
     return "Revoked"
-  
+
 def revoke():
   credentials = google.oauth2.credentials.Credentials(
     **flask.session['credentials'])
@@ -231,13 +242,20 @@ def clear_credentials():
   if 'credentials' in flask.session:
     del flask.session['credentials']
     print("Credentials cleared!!")
+    
+def delayed_function(delay_seconds):# a function that calls another function only after a set amount of time..
+    time.sleep(delay_seconds)
+    clear_UserCredentials()
+    
+def clear_UserCredentials():
+    revoke()  #revokes access to the users google calendar...
+    clear_credentials()  #make it so if the user wishs to set another meeting he or she must login again..
 
 @app.route('/clear')
 def clear_credentials():
   # revoke()
   if 'credentials' in flask.session:
-    del flask.session['credentials']
-    
+    del flask.session['credentials']   
     
   return 'Done'
 

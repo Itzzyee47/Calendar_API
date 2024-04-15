@@ -19,7 +19,13 @@
         
         <button type="submit">Book</button><br>
 
-        
+        <ol>
+        {% for d in data %}
+            <li>
+                {{d}}
+            </li>
+        {% endfor %}
+        </ol>
         
     </form>
 </body>
