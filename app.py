@@ -57,29 +57,29 @@ def index():
   context = {"name":"DB_Trys"}
   return flask.render_template("index.html",**context)
 
-# test routes.......................
-@app.route('/t',methods=["post","get"])
-def test():
-  data = ref.order_by('email', direction=firestore.Query.ASCENDING).get()
-  dataA = []
-  for doc in data:
-            dataA.append(doc.to_dict())
-  context = {"data":dataA,"name":"Zyee's"}
-  return flask.render_template("test.html",**context)
+# # test routes.......................
+# @app.route('/t',methods=["post","get"])
+# def test():
+#   data = ref.order_by('email', direction=firestore.Query.ASCENDING).get()
+#   dataA = []
+#   for doc in data:
+#             dataA.append(doc.to_dict())
+#   context = {"data":dataA,"name":"Zyee's"}
+#   return flask.render_template("test.html",**context)
 
-# test routes.......................
-@app.route('/t2',methods=["post"])
-def test2():
-  if flask.request.method == "POST":
-    data = request.form.to_dict()
-    data["status"] = False
-    #db = ref.get()
-    addToDb(data)
-    context = {"db":data,"name":db}
+# # test routes.......................
+# @app.route('/t2',methods=["post"])
+# def test2():
+#   if flask.request.method == "POST":
+#     data = request.form.to_dict()
+#     data["status"] = False
+#     #db = ref.get()
+#     addToDb(data)
+#     context = {"db":data,"name":db}
     
-    return flask.render_template("test2.html",**context)
+#     return flask.render_template("test2.html",**context)
   
-  return flask.redirect(flask.url_for('test'))
+#   return flask.redirect(flask.url_for('test'))
 
 @app.route('/meet',methods=["POST"])
 def meet():
@@ -156,6 +156,7 @@ def test_api_request():
 
       flask.session['credentials'] = credentials_to_dict(credentials)
       context = {"link":event.get('htmlLink'),"date":start, "email":email}
+      eV = event.get('htmlLink')
       
       data = flask.session["data"]
       addToDb(data)
@@ -163,9 +164,28 @@ def test_api_request():
       
       delayed_function(60)
       
-      return render_template('meet.html',**context)
+      return eV,start
     except Exception as e:
       return 404, 'An error occured'+str(e)
+
+@app.route('/getEvents',methods=["get"])
+def getE():
+  data = ref.order_by('email', direction=firestore.Query.ASCENDING).get()
+  dataA = []
+  for doc in data:
+    dataA.append(doc.to_dict())
+            
+  return 200, dataA
+
+@app.route('/updateEvent/<string:id>',methods=["patch"])
+def updateE(id):
+  update = {'status':True}
+  try:
+    data = ref.document(id).update(update)
+    if data:
+      return 200, 'Sucessfully updated'
+  except Exception as e:
+    return 403, 'An error occured updating'
 
 
 @app.route('/authorize')
@@ -270,11 +290,6 @@ def credentials_to_dict(credentials):
 
 
 if __name__ == '__main__':
-  
-  # When running locally, disable OAuthlib's HTTPs verification.
-  # ACTION ITEM for developers:
-  #     When running in production *do not* leave this option enabled.
-  os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 
   # Specify a hostname and port that are set as a valid redirect URI
   # for your API project in the Google API Console.
