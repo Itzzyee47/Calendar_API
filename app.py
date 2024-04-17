@@ -1,6 +1,7 @@
 import os,datetime,time
 import flask
 import requests
+from sendEmail import sendEmail
 import firebase_admin
 from flask_cors import CORS
 from firebase_admin import credentials,db,firestore
@@ -98,76 +99,79 @@ def meet():
     flask.session["endDate"] = endDate
     flask.session["email"] = email
     flask.session["data"] = data
+    addToDb(data) 
+    sendEmail(email)
     
-  # return f'<h1>The start date: {date_obj}<br> The end date: {endDate}<h1>'
-  return flask.redirect(flask.url_for('test_api_request'))
+  return flask.redirect(flask.url_for('bookedMeeting'))
 
 
 @app.route('/booked')
-def test_api_request():
-    if 'credentials' not in flask.session:
-        return flask.redirect('authorize')
+def bookedMeeting():
+  
+  return render_template("set.html")
+# def test_api_request():
+#     if 'credentials' not in flask.session:
+#         return flask.redirect('authorize')
 
-    # Load credentials from the session.
-    credentials = google.oauth2.credentials.Credentials(
-        **flask.session['credentials'])
+#     # Load credentials from the session.
+#     credentials = google.oauth2.credentials.Credentials(
+#         **flask.session['credentials'])
 
-    # service = build("calendar", "v3", credentials=creds)
-    service = googleapiclient.discovery.build(
-        API_SERVICE_NAME, API_VERSION, credentials=credentials)
-    # Convert the necessary event values to strings...
-    start = flask.session["date"]
-    end = flask.session["endDate"]
-    start = start.strftime('%Y-%m-%dT%H:%M:%S')
-    end = end.strftime('%Y-%m-%dT%H:%M:%S')
-    email = str(flask.session["email"])
+#     # service = build("calendar", "v3", credentials=creds)
+#     service = googleapiclient.discovery.build(
+#         API_SERVICE_NAME, API_VERSION, credentials=credentials)
+#     # Convert the necessary event values to strings...
+#     start = flask.session["date"]
+#     end = flask.session["endDate"]
+#     start = start.strftime('%Y-%m-%dT%H:%M:%S')
+#     end = end.strftime('%Y-%m-%dT%H:%M:%S')
+#     email = str(flask.session["email"])
     
-    Event = {
-            'summary': 'Meeting with Competent Property Group Ltd',
-            'location': 'Buea, Cameroon',
-            'description': 'You has been invited to a meeting with real estate experts of Competent Property Group Ltd.',
-            'start': {
-                'dateTime': start, 
-                'timeZone': 'Africa/Douala',
-            },
-            'end': {
-                'dateTime': end,
-                'timeZone': 'Africa/Douala',
-            },
-            'organizer': [
-                {'email': 'ebongloveis@gmail.com'},
-            ],
-            'attendees': [
-                {'email':'joeltabe3@gmail.com'},
-                {'email': "jeffyouashi@gmail.com"},
-                {'email': email }
+#     Event = {
+#             'summary': 'Meeting with Competent Property Group Ltd',
+#             'location': 'Buea, Cameroon',
+#             'description': 'You has been invited to a meeting with real estate experts of Competent Property Group Ltd.',
+#             'start': {
+#                 'dateTime': start, 
+#                 'timeZone': 'Africa/Douala',
+#             },
+#             'end': {
+#                 'dateTime': end,
+#                 'timeZone': 'Africa/Douala',
+#             },
+#             'organizer': [
+#                 {'email': 'ebongloveis@gmail.com'},
+#             ],
+#             'attendees': [
+#                 {'email':'joeltabe3@gmail.com'},
+#                 {'email': "jeffyouashi@gmail.com"},
+#                 {'email': email }
                 
-            ],
-            'reminders': {
-                'useDefault': False,
-                'overrides': [
-                {'method': 'email', 'minutes': 4 * 60},
-                {'method': 'popup', 'minutes': 30},
-                ],
-            },
-            }
+#             ],
+#             'reminders': {
+#                 'useDefault': False,
+#                 'overrides': [
+#                 {'method': 'email', 'minutes': 4 * 60},
+#                 {'method': 'popup', 'minutes': 30},
+#                 ],
+#             },
+#             }
 
-    try: 
-      event = service.events().insert(calendarId='primary', body=Event).execute() 
+#     try: 
+#       event = service.events().insert(calendarId='primary', body=Event).execute() 
 
-      flask.session['credentials'] = credentials_to_dict(credentials)
-      context = {"link":event.get('htmlLink'),"date":start, "email":email}
-      eV = event.get('htmlLink')
+#       flask.session['credentials'] = credentials_to_dict(credentials)
+#       context = {"link":event.get('htmlLink'),"date":start, "email":email}
       
-      data = flask.session["data"]
-      addToDb(data)
-      print("meeting booked sucessfully")
+#       data = flask.session["data"]
+#       addToDb(data)
+#       print("meeting booked sucessfully")
       
-      delayed_function(60)
+#       delayed_function(60)
       
-      return jsonify(eV,start), 202
-    except Exception as e:
-      return 'An error occured'+str(e), 404
+#       return flask.render_template("set.html",**context)
+#     except Exception as e:
+#       return 'An error occured'+str(e), 404
 
 @app.route('/getEvents',methods=["get"])
 def getE():
